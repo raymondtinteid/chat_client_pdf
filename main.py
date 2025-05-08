@@ -6,6 +6,9 @@ import os
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
 
+endpoint = os.getenv("ENDPOINT_URL", "")
+deployment = os.getenv("DEPLOYMENT_NAME", "o1")
+
 
 def extract_pdf_text(files):
     """Extract text from multiple PDF files"""
@@ -27,8 +30,8 @@ def chat_response(message, history, files):
         )
 
         client = AzureOpenAI(
-            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-            api_version="2024-02-01",
+            azure_endpoint=endpoint,
+            api_version="2025-01-01-preview",
             azure_ad_token_provider=token_provider,
         )
 
