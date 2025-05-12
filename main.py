@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-import gradio as gr
 import PyPDF2
 import os
 from openai import AzureOpenAI, OpenAI
 from google import genai
 from dotenv import load_dotenv
+from ui import create_ui, launch_ui
 
 load_dotenv()
 
@@ -99,7 +99,7 @@ def chat_response(message, history, files):
                 "total_tokens": response.usage.total_tokens,
             }
 
-            return response.choices[0].message.content.strip(), token_usage
+            return response.choices.message.content.strip(), token_usage
 
         elif client["type"] == "openai":
             # Format messages for OpenAI
@@ -132,7 +132,7 @@ def chat_response(message, history, files):
                 "total_tokens": response.usage.total_tokens,
             }
 
-            return response.choices[0].message.content.strip(), token_usage
+            return response.choices.message.content.strip(), token_usage
 
         elif client["type"] == "gemini":
             # Format prompt for Gemini
@@ -188,111 +188,39 @@ def chat_response(message, history, files):
         }
 
 
-with gr.Blocks() as demo:
-    with gr.Row():
-        with gr.Column(scale=4):
-            chatbot = gr.Chatbot(type="messages", show_copy_button=True)
+def chat_wrapper(message, history, files):
+    # Convert tuple history to list of ChatMessage objects if needed
+    messages_history = []
+    for h in history:
+        if isinstance(h, tuple):
+            messages_history.append({"role": "user", "content": h})
+            messages_history.append({"role": "assistant", "content": h[1]})
+        else:
+            messages_history.append(h)
 
-        with gr.Column(scale=1):
-            file_input = gr.File(
-                label="Upload PDF(s) (Optional)",
-                file_types=[".pdf"],
-                file_count="multiple",
-            )
+    response_text, token_usage = chat_response(message, history, files)
 
-    # Display which AI service is being used
-    ai_service = get_ai_client()["type"]
-    service_info = gr.Markdown(f"**Using AI Service:** {ai_service}")
+    # Create token usage information
+    token_info_text = f"**Token Usage:** Prompt: {token_usage['prompt_tokens']} | Completion: {token_usage['completion_tokens']} | Total: {token_usage['total_tokens']}"
 
-    # Token usage display
-    token_info = gr.Markdown("**Token Usage:** No messages yet")
-
-    last_response = gr.Textbox(visible=False)
-
-    def chat_wrapper(message, history, files):
-        # Convert tuple history to list of ChatMessage objects if needed
-        messages_history = []
-        for h in history:
-            if isinstance(h, tuple):
-                messages_history.append(gr.ChatMessage(role="user", content=h[0]))
-                messages_history.append(gr.ChatMessage(role="assistant", content=h[1]))
-            else:
-                messages_history.append(h)
-
-        response_text, token_usage = chat_response(message, history, files)
-
-        # Create token usage information
-        token_info_text = f"**Token Usage:** Prompt: {token_usage['prompt_tokens']} | Completion: {token_usage['completion_tokens']} | Total: {token_usage['total_tokens']}"
-
-        # Add messages to history
-        messages_history.append(gr.ChatMessage(role="user", content=message))
-        messages_history.append(
-            gr.ChatMessage(
-                role="assistant",
-                content=response_text,
-                metadata={
-                    "title": f"🔢 Token Usage: {token_usage['total_tokens']} total"
-                },
-            )
-        )
-
-        return "", messages_history, response_text, token_info_text
-
-    def update_last_response(history):
-        if history and len(history) > 0:
-            if isinstance(history[-1], tuple):
-                last_msg = history[-1][1]
-            else:
-                last_msg = (
-                    history[-1].content if history[-1].role == "assistant" else ""
-                )
-            return last_msg
-        return ""
-
-    with gr.Row():
-        msg = gr.Textbox(
-            show_label=False, placeholder="Enter text and press enter", container=False
-        )
-        submit_btn = gr.Button("Submit")
-
-    copy_btn = gr.Button("Copy Last Response")
-
-    msg.submit(
-        chat_wrapper,
-        [msg, chatbot, file_input],
-        [msg, chatbot, last_response, token_info],
-    ).then(update_last_response, chatbot, last_response)
-
-    submit_btn.click(
-        chat_wrapper,
-        [msg, chatbot, file_input],
-        [msg, chatbot, last_response, token_info],
-    ).then(update_last_response, chatbot, last_response)
-
-    # Set up the copy button functionality
-    copy_btn.click(
-        lambda x: x,
-        last_response,
-        None,
-        js="(text) => { navigator.clipboard.writeText(text); }",
+    # Add messages to history
+    messages_history.append({"role": "user", "content": message})
+    messages_history.append(
+        {
+            "role": "assistant",
+            "content": response_text,
+            "metadata": {
+                "title": f"🔢 Token Usage: {token_usage['total_tokens']} total"
+            },
+        }
     )
 
-    gr.Examples(
-        examples=[
-            ["Summarize the main points"],
-            ["Compare the documents"],
-            ["What's the key conclusion?"],
-        ],
-        inputs=msg,
-    )
+    return "", messages_history, response_text, token_info_text
 
 
 if __name__ == "__main__":
-    # Install required packages if not already installed
-    try:
-        import google.generativeai
-    except ImportError:
-        print("Installing google-generativeai package...")
-        os.system("pip install google-generativeai")
-
-    demo.launch()
+    # Create the UI
+    demo, chatbot, last_response, token_info = create_ui(chat_wrapper, get_ai_client)
+    
+    # Launch the UI
+    launch_ui(demo)
