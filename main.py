@@ -1,24 +1,13 @@
 #!/usr/bin/env python3
 
-import gradio as gr
-import PyPDF2
 import os
 from openai import AzureOpenAI, OpenAI
 from google import genai
 from dotenv import load_dotenv
+import ui  # Import our new UI module
+from parser import extract_pdf_text
 
 load_dotenv()
-
-
-def extract_pdf_text(files):
-    """Extract text from multiple PDF files"""
-    full_text = ""
-    for file in files:
-        with open(file.name, "rb") as f:
-            reader = PyPDF2.PdfReader(f)
-            text = "\n".join([page.extract_text() for page in reader.pages])
-            full_text += f"\n\n[Document: {os.path.basename(file.name)}]\n{text}"
-    return full_text.strip()
 
 
 def get_ai_client():
@@ -59,9 +48,7 @@ def chat_response(message, history, files):
 
         # Add PDF context if available
         if files and len(files) > 0:
-            pdf_text = extract_pdf_text(files)[
-                :6000
-            ]  # Increased token limit for multiple files
+            pdf_text = extract_pdf_text(files)[:6000]
             context = f"Use these documents to answer questions:\n{pdf_text}"
         else:
             context = None
@@ -70,7 +57,8 @@ def chat_response(message, history, files):
         client = get_ai_client()
 
         if client["type"] == "azure_openai":
-            # Format messages for Azure OpenAI
+            # Azure OpenAI implementation
+            # [Code remains the same as in the original script]
             if context:
                 messages.append({"role": "system", "content": context})
 
@@ -102,7 +90,8 @@ def chat_response(message, history, files):
             return response.choices[0].message.content.strip(), token_usage
 
         elif client["type"] == "openai":
-            # Format messages for OpenAI
+            # OpenAI implementation
+            # [Code remains the same as in the original script]
             if context:
                 messages.append({"role": "system", "content": context})
 
@@ -120,7 +109,7 @@ def chat_response(message, history, files):
 
             # Get response from OpenAI
             response = client["client"].chat.completions.create(
-                model="gpt-3.5-turbo",  # You can change this to your preferred model
+                model="gpt-3.5-turbo",
                 messages=messages,
                 temperature=0.7,
             )
@@ -135,6 +124,8 @@ def chat_response(message, history, files):
             return response.choices[0].message.content.strip(), token_usage
 
         elif client["type"] == "gemini":
+            # Gemini implementation
+            # [Code remains the same as in the original script]
             # Format prompt for Gemini
             prompt = ""
 
@@ -157,7 +148,7 @@ def chat_response(message, history, files):
 
             # Get response from Gemini
             response = client["client"].models.generate_content(
-                model="gemini-2.0-flash",  # Using the latest Gemini model
+                model="gemini-2.0-flash",
                 contents=prompt,
             )
 
@@ -188,106 +179,50 @@ def chat_response(message, history, files):
         }
 
 
-with gr.Blocks() as demo:
-    with gr.Row():
-        with gr.Column(scale=4):
-            chatbot = gr.Chatbot(type="messages", show_copy_button=True)
+def chat_wrapper(message, history, files):
+    """Wrapper function to handle chat interactions"""
+    # Convert tuple history to list of ChatMessage objects if needed
+    messages_history = []
+    for h in history:
+        if isinstance(h, tuple):
+            messages_history.append(gr.ChatMessage(role="user", content=h[0]))
+            messages_history.append(gr.ChatMessage(role="assistant", content=h[1]))
+        else:
+            messages_history.append(h)
 
-        with gr.Column(scale=1):
-            file_input = gr.File(
-                label="Upload PDF(s) (Optional)",
-                file_types=[".pdf"],
-                file_count="multiple",
-            )
+    response_text, token_usage = chat_response(message, history, files)
 
-    # Display which AI service is being used
-    ai_service = get_ai_client()["type"]
-    service_info = gr.Markdown(f"**Using AI Service:** {ai_service}")
+    # Create token usage information
+    token_info_text = f"**Token Usage:** Prompt: {token_usage['prompt_tokens']} | Completion: {token_usage['completion_tokens']} | Total: {token_usage['total_tokens']}"
 
-    # Token usage display
-    token_info = gr.Markdown("**Token Usage:** No messages yet")
-
-    last_response = gr.Textbox(visible=False)
-
-    def chat_wrapper(message, history, files):
-        # Convert tuple history to list of ChatMessage objects if needed
-        messages_history = []
-        for h in history:
-            if isinstance(h, tuple):
-                messages_history.append(gr.ChatMessage(role="user", content=h[0]))
-                messages_history.append(gr.ChatMessage(role="assistant", content=h[1]))
-            else:
-                messages_history.append(h)
-
-        response_text, token_usage = chat_response(message, history, files)
-
-        # Create token usage information
-        token_info_text = f"**Token Usage:** Prompt: {token_usage['prompt_tokens']} | Completion: {token_usage['completion_tokens']} | Total: {token_usage['total_tokens']}"
-
-        # Add messages to history
-        messages_history.append(gr.ChatMessage(role="user", content=message))
-        messages_history.append(
-            gr.ChatMessage(
-                role="assistant",
-                content=response_text,
-                metadata={
-                    "title": f"🔢 Token Usage: {token_usage['total_tokens']} total"
-                },
-            )
+    # Add messages to history
+    messages_history.append(gr.ChatMessage(role="user", content=message))
+    messages_history.append(
+        gr.ChatMessage(
+            role="assistant",
+            content=response_text,
+            metadata={"title": f"🔢 Token Usage: {token_usage['total_tokens']} total"},
         )
-
-        return "", messages_history, response_text, token_info_text
-
-    def update_last_response(history):
-        if history and len(history) > 0:
-            if isinstance(history[-1], tuple):
-                last_msg = history[-1][1]
-            else:
-                last_msg = (
-                    history[-1].content if history[-1].role == "assistant" else ""
-                )
-            return last_msg
-        return ""
-
-    with gr.Row():
-        msg = gr.Textbox(
-            show_label=False, placeholder="Enter text and press enter", container=False
-        )
-        submit_btn = gr.Button("Submit")
-
-    copy_btn = gr.Button("Copy Last Response")
-
-    msg.submit(
-        chat_wrapper,
-        [msg, chatbot, file_input],
-        [msg, chatbot, last_response, token_info],
-    ).then(update_last_response, chatbot, last_response)
-
-    submit_btn.click(
-        chat_wrapper,
-        [msg, chatbot, file_input],
-        [msg, chatbot, last_response, token_info],
-    ).then(update_last_response, chatbot, last_response)
-
-    # Set up the copy button functionality
-    copy_btn.click(
-        lambda x: x,
-        last_response,
-        None,
-        js="(text) => { navigator.clipboard.writeText(text); }",
     )
 
-    gr.Examples(
-        examples=[
-            ["Summarize the main points"],
-            ["Compare the documents"],
-            ["What's the key conclusion?"],
-        ],
-        inputs=msg,
-    )
+    return "", messages_history, response_text, token_info_text
+
+
+def update_last_response(history):
+    """Update the last response textbox with the most recent assistant message"""
+    if history and len(history) > 0:
+        if isinstance(history[-1], tuple):
+            last_msg = history[-1][1]
+        else:
+            last_msg = history[-1].content if history[-1].role == "assistant" else ""
+        return last_msg
+    return ""
 
 
 if __name__ == "__main__":
+    # Import gradio here to avoid circular imports
+    import gradio as gr
+
     # Install required packages if not already installed
     try:
         import google.generativeai
@@ -295,4 +230,12 @@ if __name__ == "__main__":
         print("Installing google-generativeai package...")
         os.system("pip install google-generativeai")
 
+    # Create the UI
+    demo, service_info = ui.create_ui(chat_wrapper, update_last_response)
+
+    # Update service info with the current AI service
+    ai_service_type = get_ai_client()["type"]
+    ui.update_service_info(service_info, ai_service_type)
+
+    # Launch the application
     demo.launch()
