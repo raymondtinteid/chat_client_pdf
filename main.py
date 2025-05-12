@@ -87,7 +87,7 @@ def chat_response(message, history, files):
                 "total_tokens": response.usage.total_tokens,
             }
 
-            return response.choices[0].message.content.strip(), token_usage
+            return response.choices.message.content.strip(), token_usage
 
         elif client["type"] == "openai":
             # OpenAI implementation
@@ -121,7 +121,7 @@ def chat_response(message, history, files):
                 "total_tokens": response.usage.total_tokens,
             }
 
-            return response.choices[0].message.content.strip(), token_usage
+            return response.choices.message.content.strip(), token_usage
 
         elif client["type"] == "gemini":
             # Gemini implementation
