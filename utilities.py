@@ -1,5 +1,6 @@
 from typing import Dict, Any
 
+
 def extract_token_usage(response: Any, client_type: str) -> Dict[str, int]:
     """
     Extract token usage information from the API response.
@@ -26,7 +27,7 @@ def extract_token_usage(response: Any, client_type: str) -> Dict[str, int]:
             }
         elif client_type == "gemini":
             token_usage = {
-                "prompt_tokens": getattr(response, "prompt_tokens", 0),
+                "prompt_tokens": response.usage_metadata.prompt_token_count,
                 "completion_tokens": response.usage_metadata.candidates_token_count,
                 "total_tokens": response.usage_metadata.total_token_count,
             }
