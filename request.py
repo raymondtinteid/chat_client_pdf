@@ -15,7 +15,8 @@ def handle_openai_request(
     llm: LLM,
     message: str,
     history: List[Tuple[str, str]],
-    context: Optional[str],
+    last_n: Optional[int] = None,
+    context: Optional[str] = None,
 ) -> Tuple[str, Dict[str, int]]:
     """
     Handle requests for OpenAI and Azure OpenAI clients.
@@ -33,7 +34,7 @@ def handle_openai_request(
 
     # Add context if available
     if context:
-        messages.append({"role": "system", "content": context})
+        messages += [{"role": "user", "content": context}]
 
     # Add conversation history
     for human, assistant in history:
@@ -63,7 +64,8 @@ def handle_gemini_request(
     llm: LLM,
     message: str,
     history: List[dict],
-    context: Optional[str],
+    last_n: Optional[int] = None,
+    context: Optional[str] = None,
 ) -> Tuple[str, Dict[str, int]]:
     """
     Handle requests for Gemini client.
@@ -72,12 +74,12 @@ def handle_gemini_request(
         client: The Gemini client
         message: The user's message
         history: Conversation history
+        last_n: Last n messages to include
         context: Optional context from PDF files
 
     Returns:
         Tuple containing the response text and token usage information
     """
-    # Format prompt for Gemini
     prompt = ""
 
     # Add context if available
@@ -91,7 +93,10 @@ def handle_gemini_request(
             m = f"Assistant: {x['content']}\n\n"
         return m
 
-    prompt += "".join(map(_msg_role, history))
+    if not last_n:
+        last_n = len(history)
+
+    prompt += "".join(map(_msg_role, history[-last_n:]))
 
     # Add current message
     prompt += f"User: {message}\nAssistant:"
