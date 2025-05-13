@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import os
-from parser import extract_pdf_text_by_page
+from pdfparser import extract_pdf_text_by_page
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple
 
 import gradio as gr
@@ -17,3 +17,5 @@ demo, service_info = create_ui(chat_wrapper)
 
 # Launch the application
 demo.launch(debug=True, show_error=True)
+
+extract_pdf_text_by_page()
