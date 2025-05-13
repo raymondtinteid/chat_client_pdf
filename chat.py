@@ -1,5 +1,6 @@
 from typing import List, Tuple, Any
 
+
 def chat_wrapper(message, history, files):
     """Wrapper function to handle chat interactions"""
     import gradio as gr
@@ -34,10 +35,13 @@ def chat_wrapper(message, history, files):
 
 def update_last_response(history):
     """Update the last response textbox with the most recent assistant message"""
+    breakpoint()
     if history and len(history) > 0:
         if isinstance(history[-1], tuple):
             last_msg = history[-1][1]
         else:
-            last_msg = history[-1].content if history[-1].role == "assistant" else ""
+            last_msg = (
+                history[-1]["content"] if history[-1]["role"] == "assistant" else ""
+            )
         return last_msg
     return ""

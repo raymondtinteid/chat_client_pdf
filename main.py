@@ -151,18 +151,11 @@ def handle_gemini_request(
     # Add current message
     prompt += f"User: {message}\nAssistant:"
 
-    # Count tokens first
-    token_count = client.models.count_tokens(model="gemini-2.0-flash", contents=prompt)
-    prompt_tokens = token_count.total_tokens
-
     # Get response from Gemini
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=prompt,
     )
-
-    # Store prompt tokens for later use in token extraction
-    response.prompt_tokens = prompt_tokens
 
     # Extract token usage
     token_usage = extract_token_usage(response, "gemini")
@@ -182,4 +175,4 @@ if __name__ == "__main__":
     ui.update_service_info(service_info, ai_service_type)
 
     # Launch the application
-    demo.launch()
+    demo.launch(debug=True, show_error=True)
