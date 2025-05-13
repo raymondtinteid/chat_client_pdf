@@ -1,10 +1,68 @@
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Dict, BinaryIO, Optional
+import os
+from parser import extract_pdf_text_by_page
+from llm import get_ai_client
+from utilities import extract_token_usage
+
+
+def chat_response(
+    message: str, history: List[Tuple[str, str]], files: List[BinaryIO]
+) -> Tuple[str, Dict[str, int]]:
+    """
+    Generate response using either PDF context or general knowledge via OpenAI or Gemini.
+
+    Args:
+        message: The user's message
+        history: Conversation history
+        files: List of uploaded PDF files
+
+    Returns:
+        Tuple containing the response text and token usage information
+    """
+    try:
+        # Check which API key is available and create the appropriate client
+        client_info = get_ai_client()
+        client_type = client_info["type"]
+        client = client_info["client"]
+
+        if client_type == "none":
+            return "No AI service is available. Please set up API keys.", {
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
+            }
+
+        # Add PDF context if available
+        context = None
+        if files and len(files) > 0:
+            pdf_text = extract_pdf_text_by_page(files)[:6000]
+            context = f"Use these documents to answer questions:\n{pdf_text}"
+
+        # Handle different client types
+        if client_type in ["azure_openai", "openai"]:
+            from main import handle_openai_request
+            return handle_openai_request(client, client_type, message, history, context)
+        elif client_type == "gemini":
+            from main import handle_gemini_request
+            return handle_gemini_request(client, message, history, context)
+        else:
+            return "Unsupported AI service type.", {
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
+            }
+
+    except Exception as e:
+        return f"Error processing request: {str(e)}", {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+        }
 
 
 def chat_wrapper(message, history, files):
     """Wrapper function to handle chat interactions"""
     import gradio as gr
-    from main import chat_response
 
     # Convert tuple history to list of ChatMessage objects if needed
     messages_history = []
