@@ -45,10 +45,6 @@ def build_message_row():
     return msg, submit_btn
 
 
-def build_copy_button():
-    return gr.Button("Copy Last Response")
-
-
 def build_examples(msg):
     return gr.Examples(
         examples=[["Create sales proposal"]],
@@ -65,7 +61,6 @@ def create_ui(chat_wrapper):
         token_info = build_token_info()
         last_response = build_last_response()
         msg, submit_btn = build_message_row()
-        copy_btn = build_copy_button()
         examples = build_examples(msg)
 
         msg.submit(
@@ -88,7 +83,3 @@ def create_ui(chat_wrapper):
         )
 
     return demo, service_info
-
-
-# Usage:
-# demo, service_info = create_ui(chat_wrapper, update_last_response)
