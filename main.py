@@ -2,58 +2,22 @@
 
 import os
 from typing import Dict, Tuple, List, BinaryIO, Any, Optional
-from openai import AzureOpenAI, OpenAI
-from google import genai
 from dotenv import load_dotenv
 import ui  # Import our new UI module
 from parser import extract_pdf_text_by_page
+from llm import get_ai_client
 
 load_dotenv()
-
-
-def get_ai_client() -> Dict[str, Any]:
-    """
-    Check available API keys and return the appropriate client.
-    
-    Returns:
-        Dict containing the client type and client object
-    """
-    # Check for Azure OpenAI
-    azure_endpoint = os.getenv("APP_OPENAI_API_BASE")
-    azure_api_key = os.getenv("AZURE_OPENAI_API_KEY")
-
-    if azure_endpoint and azure_api_key:
-        client = AzureOpenAI(
-            azure_endpoint=azure_endpoint,
-            api_version=os.getenv("APP_OPENAI_API_VERSION", "2025-01-01-preview"),
-            api_key=azure_api_key,
-        )
-        return {"type": "azure_openai", "client": client}
-
-    # Check for OpenAI
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    if openai_api_key:
-        client = OpenAI(api_key=openai_api_key)
-        return {"type": "openai", "client": client}
-
-    # Check for Gemini
-    gemini_api_key = os.getenv("GEMINI_API_KEY")
-    if gemini_api_key:
-        client = genai.Client(api_key=gemini_api_key)
-        return {"type": "gemini", "client": client}
-
-    # No API keys available
-    return {"type": "none", "client": None}
 
 
 def extract_token_usage(response: Any, client_type: str) -> Dict[str, int]:
     """
     Extract token usage information from the API response.
-    
+
     Args:
         response: The API response object
         client_type: The type of AI client used
-        
+
     Returns:
         Dictionary containing token usage information
     """
@@ -62,7 +26,7 @@ def extract_token_usage(response: Any, client_type: str) -> Dict[str, int]:
         "completion_tokens": 0,
         "total_tokens": 0,
     }
-    
+
     try:
         if client_type in ["azure_openai", "openai"]:
             token_usage = {
@@ -79,19 +43,21 @@ def extract_token_usage(response: Any, client_type: str) -> Dict[str, int]:
     except Exception:
         # If token extraction fails, return zeros
         pass
-        
+
     return token_usage
 
 
-def chat_response(message: str, history: List[Tuple[str, str]], files: List[BinaryIO]) -> Tuple[str, Dict[str, int]]:
+def chat_response(
+    message: str, history: List[Tuple[str, str]], files: List[BinaryIO]
+) -> Tuple[str, Dict[str, int]]:
     """
     Generate response using either PDF context or general knowledge via OpenAI or Gemini.
-    
+
     Args:
         message: The user's message
         history: Conversation history
         files: List of uploaded PDF files
-        
+
     Returns:
         Tuple containing the response text and token usage information
     """
@@ -100,20 +66,20 @@ def chat_response(message: str, history: List[Tuple[str, str]], files: List[Bina
         client_info = get_ai_client()
         client_type = client_info["type"]
         client = client_info["client"]
-        
+
         if client_type == "none":
             return "No AI service is available. Please set up API keys.", {
                 "prompt_tokens": 0,
                 "completion_tokens": 0,
                 "total_tokens": 0,
             }
-        
+
         # Add PDF context if available
         context = None
         if files and len(files) > 0:
             pdf_text = extract_pdf_text_by_page(files)[:6000]
             context = f"Use these documents to answer questions:\n{pdf_text}"
-        
+
         # Handle different client types
         if client_type in ["azure_openai", "openai"]:
             return handle_openai_request(client, client_type, message, history, context)
@@ -134,33 +100,40 @@ def chat_response(message: str, history: List[Tuple[str, str]], files: List[Bina
         }
 
 
-def handle_openai_request(client: Any, client_type: str, message: str, 
-                         history: List[Tuple[str, str]], context: Optional[str]) -> Tuple[str, Dict[str, int]]:
+def handle_openai_request(
+    client: Any,
+    client_type: str,
+    message: str,
+    history: List[Tuple[str, str]],
+    context: Optional[str],
+) -> Tuple[str, Dict[str, int]]:
     """
     Handle requests for OpenAI and Azure OpenAI clients.
-    
+
     Args:
         client: The OpenAI client
         client_type: The type of client ("openai" or "azure_openai")
         message: The user's message
         history: Conversation history
         context: Optional context from PDF files
-        
+
     Returns:
         Tuple containing the response text and token usage information
     """
     messages = []
-    
+
     # Add context if available
     if context:
         messages.append({"role": "system", "content": context})
 
     # Add conversation history
     for human, assistant in history:
-        messages.extend([
-            {"role": "user", "content": human},
-            {"role": "assistant", "content": assistant},
-        ])
+        messages.extend(
+            [
+                {"role": "user", "content": human},
+                {"role": "assistant", "content": assistant},
+            ]
+        )
 
     # Add current message
     messages.append({"role": "user", "content": message})
@@ -180,21 +153,22 @@ def handle_openai_request(client: Any, client_type: str, message: str,
 
     # Extract token usage
     token_usage = extract_token_usage(response, client_type)
-    
+
     return response.choices.message.content.strip(), token_usage
 
 
-def handle_gemini_request(client: Any, message: str, history: List[Tuple[str, str]], 
-                         context: Optional[str]) -> Tuple[str, Dict[str, int]]:
+def handle_gemini_request(
+    client: Any, message: str, history: List[Tuple[str, str]], context: Optional[str]
+) -> Tuple[str, Dict[str, int]]:
     """
     Handle requests for Gemini client.
-    
+
     Args:
         client: The Gemini client
         message: The user's message
         history: Conversation history
         context: Optional context from PDF files
-        
+
     Returns:
         Tuple containing the response text and token usage information
     """
@@ -213,9 +187,7 @@ def handle_gemini_request(client: Any, message: str, history: List[Tuple[str, st
     prompt += f"User: {message}\nAssistant:"
 
     # Count tokens first
-    token_count = client.models.count_tokens(
-        model="gemini-2.0-flash", contents=prompt
-    )
+    token_count = client.models.count_tokens(model="gemini-2.0-flash", contents=prompt)
     prompt_tokens = token_count.total_tokens
 
     # Get response from Gemini
@@ -223,13 +195,13 @@ def handle_gemini_request(client: Any, message: str, history: List[Tuple[str, st
         model="gemini-2.0-flash",
         contents=prompt,
     )
-    
+
     # Store prompt tokens for later use in token extraction
     response.prompt_tokens = prompt_tokens
 
     # Extract token usage
     token_usage = extract_token_usage(response, "gemini")
-    
+
     return response.text.strip(), token_usage
 
 
@@ -255,7 +227,7 @@ def chat_wrapper(message, history, files):
         gr.ChatMessage(
             role="assistant",
             content=response_text,
-            metadata={"title": f"🔢 Token Usage: {token_usage['total_tokens']} total"},
+            metadata={"title": f"Token Usage: {token_usage['total_tokens']} total"},
         )
     )
 
@@ -276,13 +248,6 @@ def update_last_response(history):
 if __name__ == "__main__":
     # Import gradio here to avoid circular imports
     import gradio as gr
-
-    # Install required packages if not already installed
-    try:
-        import google.generativeai
-    except ImportError:
-        print("Installing google-generativeai package...")
-        os.system("pip install google-generativeai")
 
     # Create the UI
     demo, service_info = ui.create_ui(chat_wrapper, update_last_response)
