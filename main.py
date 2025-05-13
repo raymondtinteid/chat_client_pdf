@@ -5,7 +5,7 @@ from openai import AzureOpenAI, OpenAI
 from google import genai
 from dotenv import load_dotenv
 import ui  # Import our new UI module
-from parser import extract_pdf_text
+from parser import extract_pdf_text_by_page
 
 load_dotenv()
 
@@ -48,7 +48,7 @@ def chat_response(message, history, files):
 
         # Add PDF context if available
         if files and len(files) > 0:
-            pdf_text = extract_pdf_text(files)[:6000]
+            pdf_text = extract_pdf_by_page(files)[:6000]
             context = f"Use these documents to answer questions:\n{pdf_text}"
         else:
             context = None
