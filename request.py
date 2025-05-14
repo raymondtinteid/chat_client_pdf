@@ -38,17 +38,17 @@ def handle_openai_request(
     if context:
         messages += [{"role": "user", "content": context}]
 
-    # Add conversation history
-    for human, assistant in history:
-        messages.extend(
-            [
-                {"role": "user", "content": human},
-                {"role": "assistant", "content": assistant},
-            ]
-        )
+    def _msg_role(x):
+        if x["role"] == "user":
+            m = f"User: {x['content']}\n"
+        elif x["role"] == "assistant":
+            m = f"Assistant: {x['content']}\n\n"
+        return m
+
+    messages += [{"role": item["role"], "content": item["content"]} for item in history]
 
     # Add current message
-    messages.append({"role": "user", "content": message})
+    messages += [{"role": "user", "content": message}]
 
     response = llm_client.client.chat.completions.create(
         model=model_config[model]["model"],
