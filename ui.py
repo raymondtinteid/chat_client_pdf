@@ -1,6 +1,10 @@
 import gradio as gr
+import json
+import os
 
 from llm import llm_client
+
+proposals: dict = json.loads(os.getenv("PROPOSALS"))
 
 
 def build_chatbot_column():
@@ -50,9 +54,11 @@ def build_message_row():
 
 
 def build_examples(msg):
+    examples = [[item] for item in proposals.values()]  # value inserted into textbox
+    example_labels = [item for item in proposals.keys()]  # short button labels
+
     return gr.Examples(
-        examples=[["Create sales proposal"]],
-        inputs=msg,
+        examples=examples, inputs=msg, label="Examples", example_labels=example_labels
     )
 
 
@@ -66,13 +72,13 @@ def build_model_dropdown():
     )
 
 
-def update_model_info(model_name):
+def update_model_info(model_name: str):
     """
     Update the model in llm_client and return updated info text.
-    
+
     Args:
         model_name: The new model name selected from dropdown
-        
+
     Returns:
         Updated model info text
     """
@@ -96,9 +102,7 @@ def create_ui(chat_wrapper):
 
         # Update model_info when dropdown changes
         model_dropdown.change(
-            update_model_info,
-            inputs=[model_dropdown],
-            outputs=[model_info]
+            update_model_info, inputs=[model_dropdown], outputs=[model_info]
         )
 
         # Pass the selected model to chat_wrapper as an additional input
