@@ -1,7 +1,7 @@
 from typing import List, Tuple, Any, Dict, BinaryIO, Optional
 import gradio as gr
 import os
-from parser import extract_pdf_text_by_page
+from pdfparser import extract_pdf_text_by_page
 from llm import get_ai_client, llm_client
 from request import handle_openai_request, handle_gemini_request, Response
 
