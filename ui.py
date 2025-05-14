@@ -4,7 +4,7 @@ import os
 
 from llm import llm_client
 
-proposals: dict = json.loads(os.getenv("PROPOSALS"))
+from proposals import proposals
 
 
 def build_chatbot_column():
