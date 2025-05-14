@@ -75,11 +75,4 @@ def create_ui(chat_wrapper):
             [msg, chatbot, last_response, token_info],
         )
 
-        copy_btn.click(
-            lambda x: x,
-            last_response,
-            None,
-            js="(text) => { navigator.clipboard.writeText(text); }",
-        )
-
     return demo, service_info
