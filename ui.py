@@ -30,6 +30,10 @@ def build_token_info():
     return gr.Markdown("**Token Usage:** No messages yet")
 
 
+def build_model_version_info():
+    return gr.Markdown(f"**Model:** {llm_client.model}")
+
+
 def build_last_response():
     return gr.Textbox(visible=False)
 
