@@ -3,6 +3,7 @@ from typing import Dict, Tuple, List, Any, Optional
 from utilities import extract_token_usage
 from dataclasses import dataclass
 from llm import LLM
+from config import model_config
 
 
 @dataclass
@@ -12,7 +13,7 @@ class Response:
 
 
 def handle_openai_request(
-    llm: LLM,
+    llm_client: LLM,
     message: str,
     history: List[Tuple[str, str]],
     model: str,
@@ -49,8 +50,8 @@ def handle_openai_request(
     # Add current message
     messages.append({"role": "user", "content": message})
 
-    response = llm.client.chat.completions.create(
-        model=model,
+    response = llm_client.client.chat.completions.create(
+        model=model_config[model]["model"],
         messages=messages,
     )
 
@@ -62,7 +63,7 @@ def handle_openai_request(
 
 
 def handle_gemini_request(
-    llm: LLM,
+    llm_client: LLM,
     message: str,
     history: List[dict],
     model: str,
@@ -104,8 +105,8 @@ def handle_gemini_request(
     prompt += f"User: {message}\nAssistant:"
 
     # Get response from Gemini
-    response = llm.client.models.generate_content(
-        model=model,
+    response = llm_client.client.models.generate_content(
+        model=model_config[model]["model"],
         contents=prompt,
     )
 

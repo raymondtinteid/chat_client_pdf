@@ -1,7 +1,7 @@
 import gradio as gr
 import json
 import os
-
+from config import available_models
 from llm import llm_client
 
 from proposals import proposals
@@ -26,7 +26,7 @@ def build_file_input_column():
 def build_service_info():
     service_info = gr.Markdown()
     # Update service info with the current AI service
-    service_info.value = f"**Using AI Service:** {llm_client.type}"
+    service_info.value = f"**Using AI Service:** {llm_client.model}"
     return service_info
 
 
@@ -65,7 +65,7 @@ def build_examples(msg):
 def build_model_dropdown():
     # Default to current model if available, else first in list
     return gr.Dropdown(
-        choices=llm_client.available,
+        choices=available_models,
         value=llm_client.model,
         label="Choose LLM Model",
         interactive=True,

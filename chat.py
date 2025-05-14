@@ -27,10 +27,11 @@ def chat_response(
         context = f"Use these documents to answer questions:\n{pdf_text}"
 
     request_dispatcher = {
-        "azure_openai": handle_openai_request,
+        "gpt-4o": handle_openai_request,
+        "o1-preview": handle_openai_request,
         "gemini": handle_gemini_request,
     }
-    return request_dispatcher[llm_client.type](
+    return request_dispatcher[llm_client.model](
         llm_client, message, history, model, context
     )
 
