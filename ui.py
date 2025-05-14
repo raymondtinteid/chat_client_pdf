@@ -66,6 +66,20 @@ def build_model_dropdown():
     )
 
 
+def update_model_info(model_name):
+    """
+    Update the model in llm_client and return updated info text.
+    
+    Args:
+        model_name: The new model name selected from dropdown
+        
+    Returns:
+        Updated model info text
+    """
+    llm_client.update_model(model_name)
+    return f"**Model:** {model_name}"
+
+
 def create_ui(chat_wrapper):
     with gr.Blocks() as demo:
         with gr.Row():
@@ -79,6 +93,13 @@ def create_ui(chat_wrapper):
         last_response = build_last_response()
         msg, submit_btn = build_message_row()
         examples = build_examples(msg)
+
+        # Update model_info when dropdown changes
+        model_dropdown.change(
+            update_model_info,
+            inputs=[model_dropdown],
+            outputs=[model_info]
+        )
 
         # Pass the selected model to chat_wrapper as an additional input
         msg.submit(

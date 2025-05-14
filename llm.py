@@ -20,12 +20,27 @@ class LLM:
     Attributes:
         type: The type of LLM client ("azure_openai", "gemini")
         client: The client object for the respective LLM service
+        model: The current model being used
+        available: List of available models
     """
 
     type: Optional[str] = None
     client: Optional[Any] = None
     model: str = None
     available: List[str] = None
+    
+    def update_model(self, new_model: str) -> str:
+        """
+        Update the model attribute with a new value.
+        
+        Args:
+            new_model: The new model to use
+            
+        Returns:
+            The updated model name
+        """
+        self.model = new_model
+        return self.model
 
 
 def get_ai_client() -> LLM:
