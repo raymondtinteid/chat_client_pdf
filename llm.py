@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import os
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
+import json
 
 from google import genai
 from openai import AzureOpenAI, OpenAI
@@ -24,6 +25,7 @@ class LLM:
     type: Optional[str] = None
     client: Optional[Any] = None
     model: str = None
+    available: List[str] = None
 
 
 def get_ai_client() -> LLM:
@@ -38,6 +40,7 @@ def get_ai_client() -> LLM:
     azure_api_version = os.getenv("AZURE_OPENAI_API_VERSION")
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     model = os.getenv("MODEL")
+    available = json.loads(os.getenv("AVAILABLE_MODELS"))
 
     if azure_endpoint or azure_api_key:
         client = AzureOpenAI(
@@ -50,7 +53,7 @@ def get_ai_client() -> LLM:
         client = genai.Client(api_key=gemini_api_key)
         type = "gemini"
 
-    return LLM(type=type, client=client, model=model)
+    return LLM(type=type, client=client, model=model, available=available)
 
 
 llm_client = get_ai_client()
