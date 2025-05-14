@@ -19,10 +19,10 @@ def handle_openai_request(
     context: Optional[str] = None,
 ) -> Tuple[str, Dict[str, int]]:
     """
-    Handle requests for OpenAI and Azure OpenAI clients.
+    Handle requests for Azure OpenAI clients.
 
     Args:
-        llm_client: The OpenAI client
+        llm_client: The Azure OpenAI client
         message: The user's message
         history: Conversation history
         context: Optional context from PDF files
@@ -56,8 +56,8 @@ def handle_openai_request(
     # Extract token usage
     token_usage = extract_token_usage(response, "azure_openai")
 
-    content = response.choices.message.content.strip()
-    return Response(conten, token_usage)
+    content = response.choices[0].message.content.strip()
+    return Response(content, token_usage)
 
 
 def handle_gemini_request(
