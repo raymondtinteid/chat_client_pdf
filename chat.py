@@ -2,11 +2,13 @@ from typing import List, Tuple, Any, Dict, BinaryIO, Optional
 import gradio as gr
 import os
 from pdfparser import extract_pdf_text_by_page
-from llm import get_ai_client, llm_client
+from ui import llm_client
 from request import handle_openai_request, handle_gemini_request, Response
 
 
-def chat_response(message: str, history: List[dict], files: List[str]) -> Response:
+def chat_response(
+    message: str, history: List[dict], files: List[str], model: str
+) -> Response:
     """
     Generate response using either PDF context or general knowledge via OpenAI or Gemini.
 
@@ -28,13 +30,15 @@ def chat_response(message: str, history: List[dict], files: List[str]) -> Respon
         "azure_openai": handle_openai_request,
         "gemini": handle_gemini_request,
     }
-    return request_dispatcher[llm_client.type](llm_client, message, history, context)
+    return request_dispatcher[llm_client.type](
+        llm_client, message, history, model, context
+    )
 
 
-def chat_wrapper(message: str, history: List[dict], files: List[str]):
+def chat_wrapper(message: str, history: List[dict], files: List[str], model: str):
     """Wrapper function to handle chat interactions"""
 
-    response = chat_response(message, history, files)
+    response = chat_response(message, history, files, model)
     p_tokens = response.token_usage["prompt_tokens"]
     c_tokens = response.token_usage["completion_tokens"]
     t_tokens = response.token_usage["total_tokens"]
@@ -57,4 +61,4 @@ def chat_wrapper(message: str, history: List[dict], files: List[str]):
     msg = ""
 
     # Return new states of objects
-    return msg, chatbot, last_response, token_info
+    return msg, chatbot, last_response, token_info, model

@@ -11,6 +11,25 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+model_config = {
+    "gemini-2.0-flash": {
+        "KEY": os.getenv("GEMINI_API_KEY"),
+        "MODEL": "gemini-2.0-flash",
+    },
+    "gpt-4o": {
+        "ENDPOINT": os.getenv("GPT4O_ENDPOINT"),
+        "KEY": os.getenv("GPT4O_KEY"),
+        "VERSION": os.getenv("GPT4O_VERSION"),
+        "MODEL": os.getenv("GPT4O_MODEL"),
+    },
+    "o1-preview": {
+        "ENDPOINT": os.getenv("O1_ENDPOINT"),
+        "KEY": os.getenv("O1_KEY"),
+        "VERSION": os.getenv("O1_VERSION"),
+        "MODEL": os.getenv("O1_MODEL"),
+    },
+}
+
 
 @dataclass
 class LLM:
@@ -28,18 +47,40 @@ class LLM:
     client: Optional[Any] = None
     model: str = None
     available: List[str] = None
-    
+
     def update_model(self, new_model: str) -> str:
         """
-        Update the model attribute with a new value.
-        
+        Update the model attribute and client with a new value.
+
         Args:
             new_model: The new model to use
-            
+
         Returns:
             The updated model name
         """
-        self.model = new_model
+
+        if new_model not in model_config:
+            raise ValueError(f"Model {new_model} not found in model_config.")
+
+        config = model_config[new_model]
+        if new_model in ["gpt-4o", "o1-preview"]:
+            from openai import AzureOpenAI
+
+            self.client = AzureOpenAI(
+                azure_endpoint=config["ENDPOINT"],
+                api_key=config["KEY"],
+                api_version=config["VERSION"],
+            )
+            self.type = "azure_openai"
+        elif new_model == "gemini-2.0-flash":
+            from google import genai
+
+            self.client = genai.Client(api_key=config["KEY"])
+            self.type = "gemini"
+        else:
+            raise ValueError(f"Unsupported model: {new_model}")
+
+        self.model = config["MODEL"]
         return self.model
 
 
@@ -50,25 +91,34 @@ def get_ai_client() -> LLM:
     Returns:
         LLMClient object containing the client type and client object
     """
-    azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-    azure_api_key = os.getenv("AZURE_OPENAI_API_KEY")
-    azure_api_version = os.getenv("AZURE_OPENAI_API_VERSION")
-    gemini_api_key = os.getenv("GEMINI_API_KEY")
-    model = os.getenv("MODEL")
-    available = json.loads(os.getenv("AVAILABLE_MODELS"))
 
-    if azure_endpoint or azure_api_key:
+    if os.getenv("GPT4O_KEY"):
         client = AzureOpenAI(
-            azure_endpoint=azure_endpoint,
-            api_version=azure_api_version,
-            api_key=azure_api_key,
+            azure_endpoint=os.getenv("GPT4O_ENDPOINT"),
+            api_version=os.getenv("GPT4O_VERSION"),
+            api_key=os.getenv("GPT4O_KEY"),
         )
         type = "azure_openai"
+        model = os.getenv("GPT4O_MODEL")
+    elif os.getenv("O1_KEY"):
+        client = AzureOpenAI(
+            azure_endpoint=os.getenv("O1_ENDPOINT"),
+            api_version=os.getenv("O1_VERSION"),
+            api_key=os.getenv("O1_KEY"),
+        )
+        type = "azure_openai"
+        model = os.getenv("O1_MODEL")
     else:
-        client = genai.Client(api_key=gemini_api_key)
+        client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
         type = "gemini"
+        model = os.getenv("GEMINI_MODEL")
 
-    return LLM(type=type, client=client, model=model, available=available)
+    return LLM(
+        type=type,
+        client=client,
+        model=model,
+        available=json.loads(os.getenv("AVAILABLE_MODELS")),
+    )
 
 
 llm_client = get_ai_client()

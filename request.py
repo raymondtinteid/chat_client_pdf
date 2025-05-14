@@ -15,8 +15,9 @@ def handle_openai_request(
     llm: LLM,
     message: str,
     history: List[Tuple[str, str]],
-    last_n: Optional[int] = None,
+    model: str,
     context: Optional[str] = None,
+    last_n: Optional[int] = None,
 ) -> Tuple[str, Dict[str, int]]:
     """
     Handle requests for Azure OpenAI clients.
@@ -49,7 +50,7 @@ def handle_openai_request(
     messages.append({"role": "user", "content": message})
 
     response = llm.client.chat.completions.create(
-        model=llm.model,
+        model=model,
         messages=messages,
     )
 
@@ -64,8 +65,9 @@ def handle_gemini_request(
     llm: LLM,
     message: str,
     history: List[dict],
-    last_n: Optional[int] = None,
+    model: str,
     context: Optional[str] = None,
+    last_n: Optional[int] = None,
 ) -> Tuple[str, Dict[str, int]]:
     """
     Handle requests for Gemini client.
@@ -103,7 +105,7 @@ def handle_gemini_request(
 
     # Get response from Gemini
     response = llm.client.models.generate_content(
-        model=llm.model,
+        model=model,
         contents=prompt,
     )
 
