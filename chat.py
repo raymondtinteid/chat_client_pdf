@@ -54,7 +54,6 @@ def chat_wrapper(message: str, history: List[dict], files: List[str], model: str
         gr.ChatMessage(
             role="assistant",
             content=last_response,
-            metadata={"title": f"Token Usage: {t_tokens} total"},
         ),
     ]
 
