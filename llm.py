@@ -39,8 +39,7 @@ class LLM:
             raise ValueError(f"Model {new_model} not found in model_config.")
 
         self.client = create_client(new_model)
-        self.model = model_config[new_model]["model"]
-        return model_config[new_model]["model"]
+        return new_model
 
 
 def create_client(model: str) -> Union[AzureOpenAI, genai.Client]:

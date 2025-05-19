@@ -17,5 +17,3 @@ demo, service_info = create_ui(chat_wrapper)
 
 # Launch the application
 demo.launch(debug=True, show_error=True)
-
-extract_pdf_text_by_page()
