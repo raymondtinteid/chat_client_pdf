@@ -23,13 +23,6 @@ def build_file_input_column():
     return file_input
 
 
-def build_service_info():
-    service_info = gr.Markdown()
-    # Update service info with the current AI service
-    service_info.value = f"**Using AI Service:** {llm_client.model}"
-    return service_info
-
-
 def build_token_info():
     return gr.Markdown("**Token Usage:** No messages yet")
 
@@ -93,7 +86,6 @@ def create_ui(chat_wrapper):
             file_input = build_file_input_column()
         with gr.Row():
             model_dropdown = build_model_dropdown()
-        service_info = build_service_info()
         model_info = build_model_version_info()
         token_info = build_token_info()
         last_response = build_last_response()
