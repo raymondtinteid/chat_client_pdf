@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from functools import cache
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple
 
-import PyPDF2
+import pypdf
 
 
 @dataclass
@@ -13,6 +13,7 @@ class Document:
     document: str
     page: int
     text: str
+    id: str
 
 
 def cache_result(func):
@@ -56,7 +57,7 @@ def extract_pdf_text_by_page(filenames: List[str]) -> List[Document]:
     for filename in filenames:
         if os.path.exists(filename) and filename.lower().endswith(".pdf"):
             with open(filename, "rb") as f:
-                reader = PyPDF2.PdfReader(f)
+                reader = pypdf.PdfReader(f)
                 for i, page in enumerate(reader.pages):
                     text = page.extract_text()
                     if text:  # Skip empty pages
@@ -65,6 +66,7 @@ def extract_pdf_text_by_page(filenames: List[str]) -> List[Document]:
                                 document=os.path.basename(filename),
                                 page=i + 1,
                                 text=text,
+                                id=f"{os.path.basename(filename)}_page_{i+1}",
                             )
                         )
     return chunks
