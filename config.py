@@ -28,7 +28,21 @@ model_config = {
         "model": os.getenv("O1_MODEL"),
         "client": AzureOpenAI,
     },
+    "text-embedding-3-large": {
+        "azure_endpoint": os.getenv("EMBEDDING_ENDPOINT"),
+        "api_key": os.getenv("EMBEDDING_KEY"),
+        "api_model": os.getenv("EMBEDDING_MODEL"),
+        "api_version": os.getenv("EMBEDDING_VERSION"),
+        "client": AzureOpenAI,
+    },
 }
 available_models = [k for k in model_config.keys() if model_config[k]["api_key"]]
 
 prio_model_name = available_models[0]
+
+vector_db_config = {
+    "n_results": 2,
+    "chunk_size": 1000,
+    "chroma_db_path": "./chroma_db",
+    "chroma_db_collection": "doc_collection",
+}
