@@ -1,7 +1,7 @@
 from typing import List, Tuple, Any, Dict, BinaryIO, Optional
 import gradio as gr
 import os
-from pdfparser import extract_pdf_text_by_page
+from pdfparser import Document, create_context
 from ui import llm_client
 from request import handle_openai_request, handle_gemini_request, Response
 
@@ -20,11 +20,7 @@ def chat_response(
     Returns:
         Tuple containing the response text and token usage information
     """
-    # Add PDF context if available
-    context = None
-    if files and len(files) > 0:
-        pdf_text = extract_pdf_text_by_page(files)[:6000]
-        context = f"Use these documents to answer questions:\n{pdf_text}"
+    context = create_context()
 
     request_dispatcher = {
         "gpt-4o": handle_openai_request,
@@ -49,7 +45,7 @@ def chat_wrapper(message: str, history: List[dict], files: List[str], model: str
     last_response = response.content
 
     # Add messages to history
-    chatbot = history + [
+    history += [
         gr.ChatMessage(role="user", content=message),
         gr.ChatMessage(
             role="assistant",
@@ -61,4 +57,4 @@ def chat_wrapper(message: str, history: List[dict], files: List[str], model: str
     msg = ""
 
     # Return new states of objects
-    return msg, chatbot, last_response, token_info, model
+    return msg, history, last_response, token_info, model
