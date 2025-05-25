@@ -46,3 +46,5 @@ vector_db_config = {
     "chroma_db_path": "./chroma_db",
     "chroma_db_collection": "doc_collection",
 }
+
+pdf_size_token_limit = 400000
