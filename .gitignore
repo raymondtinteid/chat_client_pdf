@@ -3,3 +3,9 @@
 /__pycache__/
 /conventions.md
 /proposals.py
+*.msg
+*.pdf
+*.lock
+/chroma_db/
+/.projectile
+/.dir-locals.el
