@@ -110,4 +110,4 @@ def create_ui(chat_wrapper):
             [msg, chatbot, last_response, token_info, model_info],
         )
 
-    return demo, service_info
+    return demo
