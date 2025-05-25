@@ -2,8 +2,10 @@
 
 import os
 from dataclasses import dataclass
+from config import pdf_size_token_limit
 from functools import cache
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple
+from config import vector_db_config
 
 import pypdf
 
@@ -45,28 +47,71 @@ def cache_result(func):
 
 
 @cache_result
-def extract_pdf_text_by_page(filenames: List[str]) -> List[Document]:
-    """Extract text from multiple PDF files and return as page chunks
+def extract_pdf_text_by_page(filename: str) -> List[Document]:
+    """Extract text from a single PDF file and return as page chunks
 
-    :param filenames: List of PDF file paths
-    :type filenames: List[str]
-    :return: List of Document objects, each containing document name, page number, and extracted text.
-    :rtype: List[Document]
+    :param filename: Path to PDF file
+    :return: List of Document objects with metadata
     """
-    chunks: List[Document] = []
-    for filename in filenames:
-        if os.path.exists(filename) and filename.lower().endswith(".pdf"):
-            with open(filename, "rb") as f:
-                reader = pypdf.PdfReader(f)
-                for i, page in enumerate(reader.pages):
-                    text = page.extract_text()
-                    if text:  # Skip empty pages
-                        chunks.append(
-                            Document(
-                                document=os.path.basename(filename),
-                                page=i + 1,
-                                text=text,
-                                id=f"{os.path.basename(filename)}_page_{i+1}",
-                            )
-                        )
+    if not (os.path.exists(filename) and filename.lower().endswith(".pdf")):
+        return []
+
+    with open(filename, "rb") as f:
+        reader = pypdf.PdfReader(f)
+        base_name = os.path.basename(filename)
+
+        return [
+            Document(
+                document=base_name,
+                page=i + 1,
+                text=page.extract_text(),
+                id=f"{base_name}_page_{i+1}",
+            )
+            for i, page in enumerate(reader.pages)
+            if page.extract_text().strip()
+        ]
+
+
+def extract_chunks_from_txt(file_path, chunk_size=vector_db_config["chunk_size"]):
+    with open(file_path, "r", encoding="utf-8") as f:
+        text = f.read()
+    chunks = [text[i : i + chunk_size] for i in range(0, len(text), chunk_size)]
     return chunks
+
+
+@cache_result
+def process_file(file_path: str) -> List[Document]:
+    ext = os.path.splitext(file_path)[-1].lower()
+    if ext == ".pdf":
+        print("Processing PDF file...")
+        documents = extract_pdf_text_by_page(file_path)
+    elif ext == ".txt":
+        print("Processing TXT file...")
+        documents = extract_chunks_from_txt(
+            file_path, chunk_size=vector_db_config["chunk_size"]
+        )
+    else:
+        raise ValueError("Unsupported file type. Please provide a PDF or TXT file.")
+
+    return documents
+
+
+def extract_text(documents: List[Document]) -> str:
+    return "\n".join(documents.text)
+
+
+def create_context(files: List[str]) -> str:
+    context = None
+    if files and len(files) > 0:
+        texts = []
+        text_per_file = round(pdf_size_token_limit / len(files))
+        for f in files:
+            f_doc = process_file(f)
+            f_text = extract_text(f_doc)
+            f_text = f_text[:text_per_file]
+            texts.append(f_text)
+
+        pdf_text = "\n".join(texts)
+
+        context = f"Use this information to answer questions:\n{pdf_text}"
+    return context
