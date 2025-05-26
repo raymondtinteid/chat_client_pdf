@@ -20,7 +20,7 @@ def chat_response(
     Returns:
         Tuple containing the response text and token usage information
     """
-    context = create_context()
+    context = create_context(files)
 
     request_dispatcher = {
         "gpt-4o": handle_openai_request,
