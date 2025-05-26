@@ -17,7 +17,7 @@ def build_file_input_column():
     with gr.Column(scale=1):
         file_input = gr.File(
             label="Upload PDF(s)",
-            file_types=[".pdf"],
+            file_types=[".pdf", ".txt"],
             file_count="multiple",
         )
     return file_input

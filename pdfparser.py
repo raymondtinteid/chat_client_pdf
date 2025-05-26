@@ -72,10 +72,21 @@ def extract_pdf_text_by_page(filename: str) -> List[Document]:
         ]
 
 
-def extract_chunks_from_txt(file_path, chunk_size=vector_db_config["chunk_size"]):
+def extract_chunks_from_txt(
+    file_path, chunk_size=vector_db_config["chunk_size"]
+) -> List[Document]:
+    base_name = os.path.basename(file_path)
     with open(file_path, "r", encoding="utf-8") as f:
         text = f.read()
-    chunks = [text[i : i + chunk_size] for i in range(0, len(text), chunk_size)]
+    chunks = [
+        Document(
+            document=base_name,
+            page=i,
+            text=text[i : i + chunk_size],
+            id=f"{base_name}_page_{i+1}",
+        )
+        for i in range(0, len(text), chunk_size)
+    ]
     return chunks
 
 
@@ -97,7 +108,7 @@ def process_file(file_path: str) -> List[Document]:
 
 
 def extract_text(documents: List[Document]) -> str:
-    return "\n".join(documents.text)
+    return "\n".join(document.text for document in documents)
 
 
 def create_context(files: List[str]) -> str:
