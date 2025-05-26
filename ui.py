@@ -1,6 +1,4 @@
 import gradio as gr
-import json
-import os
 from config import available_models
 from llm import llm_client
 
@@ -9,22 +7,31 @@ from proposals import proposals
 
 def build_chatbot_column():
     with gr.Column(scale=4):
-        chatbot = gr.Chatbot(type="messages", show_copy_button=True)
+        chatbot = gr.Chatbot(
+            type="messages",
+            show_copy_button=True,
+            height=600,  # Extended height
+            autoscroll=True,  # Automatic scrolling to bottom
+        )
     return chatbot
 
 
-def build_file_input_column():
+def build_side_column(msg):
     with gr.Column(scale=1):
         file_input = gr.File(
             label="Upload PDF(s)",
             file_types=[".pdf", ".txt"],
             file_count="multiple",
         )
-    return file_input
-
-
-def build_token_info():
-    return gr.Markdown("**Token Usage:** No messages yet")
+        model_dropdown = gr.Dropdown(
+            choices=available_models,
+            value=llm_client.model,
+            label="Choose LLM Model",
+            interactive=True,
+        )
+        token_info = gr.Markdown("**Token Usage:** No messages yet")
+        examples = build_examples(msg)
+    return file_input, model_dropdown, token_info, examples
 
 
 def build_model_version_info():
@@ -41,9 +48,9 @@ def build_message_row():
             show_label=False,
             placeholder="Enter text and press enter",
             container=False,
+            max_lines=3,  # Allow multi-line input but keep it compact
         )
-        submit_btn = gr.Button("Submit")
-    return msg, submit_btn
+    return msg
 
 
 def build_examples(msg):
@@ -52,16 +59,6 @@ def build_examples(msg):
 
     return gr.Examples(
         examples=examples, inputs=msg, label="Examples", example_labels=example_labels
-    )
-
-
-def build_model_dropdown():
-    # Default to current model if available, else first in list
-    return gr.Dropdown(
-        choices=available_models,
-        value=llm_client.model,
-        label="Choose LLM Model",
-        interactive=True,
     )
 
 
@@ -80,31 +77,22 @@ def update_model_info(model_name: str):
 
 
 def create_ui(chat_wrapper):
-    with gr.Blocks() as demo:
+    with gr.Blocks(theme=gr.themes.Base()) as demo:
+        model_info = build_model_version_info()
+        last_response = build_last_response()
+        msg = build_message_row()
+
         with gr.Row():
             chatbot = build_chatbot_column()
-            file_input = build_file_input_column()
-        with gr.Row():
-            model_dropdown = build_model_dropdown()
-        model_info = build_model_version_info()
-        token_info = build_token_info()
-        last_response = build_last_response()
-        msg, submit_btn = build_message_row()
-        examples = build_examples(msg)
+            file_input, model_dropdown, token_info, examples = build_side_column(msg)
 
         # Update model_info when dropdown changes
         model_dropdown.change(
             update_model_info, inputs=[model_dropdown], outputs=[model_info]
         )
 
-        # Pass the selected model to chat_wrapper as an additional input
+        # Submit on enter key press only
         msg.submit(
-            chat_wrapper,
-            [msg, chatbot, file_input, model_dropdown],
-            [msg, chatbot, last_response, token_info, model_info],
-        )
-
-        submit_btn.click(
             chat_wrapper,
             [msg, chatbot, file_input, model_dropdown],
             [msg, chatbot, last_response, token_info, model_info],
