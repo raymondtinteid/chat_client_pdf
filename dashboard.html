@@ -2,558 +2,171 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Dynamic Assumption Form</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 40px;
-        background: #f5f6fa;
-      }
-      .section {
-        margin-bottom: 32px;
-        padding: 24px;
-        background: #fff;
-        border: 1px solid #e1e1e1;
-        border-radius: 10px;
-        box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.03);
-      }
-
-      .subsection {
-        margin-bottom: 24px;
-        padding: 16px;
-        background: #fafbfc;
-        border: 1px solid #e8e9ed;
-        border-radius: 6px;
-      }
-
-      .subsection h3 {
-        margin: 0 0 16px 0;
-        font-size: 16px;
-        font-weight: 600;
-        color: #34495e;
-      }
-
-      .form-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 20px 28px;
-        align-items: start;
-      }
-
-      .input-group {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .input-label {
-        font-size: 15px;
-        font-weight: 500;
-        color: #2c3e50;
-        margin-bottom: 3px;
-      }
-
-      input[type="text"],
-      select,
-      textarea {
-        padding: 9px 11px;
-        font-size: 15px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        transition: border 0.2s;
-        background: #fcfcfc;
-      }
-      input[type="text"]:focus,
-      select:focus,
-      textarea:focus {
-        border: 1.4px solid #4a90e2;
-        outline: none;
-        background: #fff;
-      }
-
-      /* Product dropdown styling */
-      .product-dropdown {
-        max-width: 200px;
-      }
-
-      /* Prompts section */
-      .prompts-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 20px;
-        width: 100%;
-      }
-
-      .prompt-group {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        position: relative;
-        width: 100%;
-      }
-
-      .prompt-textarea {
-        font-family: "Fira Mono", "Consolas", "Menlo", monospace;
-        font-size: 15px;
-        background: #fafbfc;
-        border: 1px solid #e3e4e8;
-        border-radius: 7px;
-        resize: vertical;
-        min-height: 80px;
-        width: 100%;
-        box-sizing: border-box;
-      }
-
-      .copy-btn {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: #eee;
-        border: none;
-        border-radius: 4px;
-        font-size: 12px;
-        padding: 3px 8px;
-        cursor: pointer;
-        color: #333;
-        transition: background 0.17s;
-        z-index: 2;
-      }
-      .copy-btn:active {
-        background: #d1eaff;
-        color: #326e9e;
-      }
-
-      @media (max-width: 600px) {
-        .form-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <!-- Product Selection Section -->
-    <div class="section" id="product-section">
-      <h2>Product Selection</h2>
-      <div class="input-group">
-        <label class="input-label" for="product">Product</label>
-        <select id="product" class="product-dropdown">
-          <option value="RCN">RCN</option>
-          <option value="Bond">Bond</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Assumptions Section -->
-    <div class="section" id="assumptions-section">
-      <h2>Assumptions</h2>
-
-      <!-- Product Information Subsection -->
-      <div class="subsection" id="product-info-subsection">
-        <h3>Product Information</h3>
-        <div class="form-grid" id="product-info-grid">
-          <!-- Populated by JS -->
-        </div>
-      </div>
-
-      <!-- Funding Options Subsection -->
-      <div class="subsection" id="funding-options-subsection">
-        <h3>Funding Options</h3>
-        <div class="form-grid" id="funding-options-grid">
-          <!-- Populated by JS -->
-        </div>
-      </div>
-
-      <!-- C assumptions Subsection -->
-      <div class="subsection" id="funding-subsection">
-        <h3>C assumptions</h3>
-        <div class="form-grid" id="funding-grid"><!-- Populated by JS --></div>
-      </div>
-    </div>
-
-    <!-- Prompts Section -->
-    <div class="section" id="prompts-section">
-      <h2>Prompts</h2>
-      <div class="prompts-grid" id="prompts-grid"><!-- Populated by JS --></div>
-    </div>
-
+    <title>Sales Narrative Playbook</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css" />
     <script>
-      // Field configurations for different products
-      const fieldConfigs = {
-        RCN: {
-          productInfo: [
-            {
-              label: "Underlying Asset",
-              name: "underlyingAsset",
-              type: "text",
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#1d232c", // Charcoal
+              accent: "#266150", // Conservative green
+              surface: "#f5f5f5", // Light neutral
+              card: "#e5e6e7", // Light gray
+              border: "#3f3f46",
+              input: "#e5e6e7",
+              focus: "#288cfa", // Classic blue
+              gold: "#bfa14a", // Gold accent
             },
-            {
-              label: "Currency",
-              name: "currency",
-              type: "text",
-              defaultValue: "USD",
+            fontFamily: {
+              sans: ["Inter", "ui-sans-serif", "system-ui"],
             },
-            { label: "Face Value", name: "faceValue", type: "text" },
-            { label: "Ask Price", name: "askPrice", type: "text" },
-            { label: "Coupon Rate", name: "couponRate", type: "text" },
-            { label: "Next Call Date", name: "nextCallDate", type: "text" },
-            { label: "Call Price", name: "callPrice", type: "text" },
-            {
-              label: "Ask Yield to Worst",
-              name: "askYieldToWorst",
-              type: "text",
+            boxShadow: {
+              glow: "0 0 0 2px #288cfa, 0 2px 8px 0 #288cfa",
             },
-          ],
-          fundingOptions: [
-            {
-              label: "Funding Currency",
-              name: "fundingCurrency",
-              type: "text",
-              defaultValue: "USD",
-            },
-            { label: "Spot Rate", name: "spotRate", type: "text" },
-            {
-              label: "Lombard Loan Interest Rate (p.a.)",
-              name: "lombardLoanInterestRate",
-              type: "text",
-              defaultValue: "5%",
-            },
-            {
-              label: "Investment Lending Value",
-              name: "investmentLendingValue",
-              type: "text",
-            },
-          ],
-          fundingSituation: [
-            {
-              label: "Available Cash Liquidity",
-              name: "availableCashLiquidity",
-              type: "text",
-            },
-            {
-              label: "Total Approved Credit Limit",
-              name: "totalApprovedCreditLimit",
-              type: "text",
-            },
-            {
-              label: "Current Lombard Loan Exposure",
-              name: "currentLombardLoanExposure",
-              type: "text",
-            },
-          ],
-        },
-        Bond: {
-          productInfo: [
-            { label: "Ask Price", name: "askPrice", type: "text" },
-            { label: "Next Call Date", name: "nextCallDate", type: "text" },
-            { label: "Call Price", name: "callPrice", type: "text" },
-            {
-              label: "Ask Yield to Worst",
-              name: "askYieldToWorst",
-              type: "text",
-            },
-          ],
-          fundingOptions: [
-            {
-              label: "Funding Currency",
-              name: "fundingCurrency",
-              type: "text",
-              defaultValue: "USD",
-            },
-            { label: "Spot Rate", name: "spotRate", type: "text" },
-            {
-              label: "Lombard Loan Interest Rate (p.a.)",
-              name: "lombardLoanInterestRate",
-              type: "text",
-              defaultValue: "5%",
-            },
-            {
-              label: "Investment Lending Value",
-              name: "investmentLendingValue",
-              type: "text",
-            },
-          ],
-          fundingSituation: [
-            {
-              label: "Available Cash Liquidity",
-              name: "availableCashLiquidity",
-              type: "text",
-            },
-            {
-              label: "Total Approved Credit Limit",
-              name: "totalApprovedCreditLimit",
-              type: "text",
-            },
-            {
-              label: "Current Lombard Loan Exposure",
-              name: "currentLombardLoanExposure",
-              type: "text",
-            },
-          ],
+          },
         },
       };
-
-      // Prompt field configuration with default values
-      const promptFields = [
-        {
-          label: "Introduction",
-          name: "introduction",
-          defaultValue: "this is the intro",
-        },
-        { label: "Part A", name: "partA" },
-        { label: "Part B", name: "partB" },
-        { label: "Part C", name: "partC" },
-        { label: "Part D", name: "partD", defaultValue: "this is part d" },
-        { label: "Part E", name: "partE", defaultValue: "this is part e" },
-      ];
-
-      let currentProduct = "RCN";
-      let productInfoFields = fieldConfigs[currentProduct].productInfo;
-      let fundingOptionsFields = fieldConfigs[currentProduct].fundingOptions;
-      let fundingSituationFields =
-        fieldConfigs[currentProduct].fundingSituation;
-      const values = {};
-      const promptValues = {};
-
-      // Render fields for a specific subsection
-      function renderFieldsInContainer(fields, containerId) {
-        const container = document.getElementById(containerId);
-        container.innerHTML = "";
-        fields.forEach((field) => {
-          const group = document.createElement("div");
-          group.className = "input-group";
-          group.innerHTML = `
-          <label class="input-label" for="${field.name}">${field.label}</label>
-          <input
-            type="${field.type}"
-            id="${field.name}"
-            name="${field.name}"
-            value="${values[field.name] || field.defaultValue || ""}"
-            autocomplete="off"
-          />
-        `;
-          container.appendChild(group);
-
-          // Set default value if it exists and field is empty
-          if (field.defaultValue && !values[field.name]) {
-            values[field.name] = field.defaultValue;
-          }
-
-          // Listen for changes
-          group.querySelector("input").addEventListener("input", (e) => {
-            values[field.name] = e.target.value;
-            updatePrompts();
-          });
-        });
-      }
-
-      // Render all input fields
-      function renderInputFields() {
-        renderFieldsInContainer(productInfoFields, "product-info-grid");
-        renderFieldsInContainer(fundingOptionsFields, "funding-options-grid");
-        renderFieldsInContainer(fundingSituationFields, "funding-grid");
-      }
-
-      // Render prompt fields
-      function renderPromptFields() {
-        const container = document.getElementById("prompts-grid");
-        container.innerHTML = "";
-        promptFields.forEach((promptField) => {
-          const group = document.createElement("div");
-          group.className = "prompt-group";
-
-          // Get the initial value - either stored value or default value
-          const initialValue =
-            promptValues[promptField.name] || promptField.defaultValue || "";
-
-          group.innerHTML = `
-          <label class="input-label" for="${promptField.name}">${promptField.label}</label>
-          <div style="position: relative; width: 100%;">
-            <button type="button" class="copy-btn" onclick="copyPrompt('${promptField.name}')">Copy</button>
-            <textarea
-              class="prompt-textarea"
-              id="${promptField.name}"
-              name="${promptField.name}"
-              placeholder="Enter ${promptField.label.toLowerCase()}..."
-            >${initialValue}</textarea>
-          </div>
-        `;
-          container.appendChild(group);
-
-          // Set the initial value in promptValues if not already set
-          if (!promptValues[promptField.name] && promptField.defaultValue) {
-            promptValues[promptField.name] = promptField.defaultValue;
-          }
-
-          // Listen for changes
-          group.querySelector("textarea").addEventListener("input", (e) => {
-            promptValues[promptField.name] = e.target.value;
-          });
-        });
-      }
-
-      function getAssumptionsString() {
-        let productInfoList = productInfoFields.map(
-          (field) => `${field.label}: ${values[field.name] || ""}`,
-        );
-        let fundingOptionsList = fundingOptionsFields.map(
-          (field) => `${field.label}: ${values[field.name] || ""}`,
-        );
-        let fundingList = fundingSituationFields.map(
-          (field) => `${field.label}: ${values[field.name] || ""}`,
-        );
-
-        return `These are the assumptions:
-Product: ${currentProduct}
-
-Product Information:
-${productInfoList.join("\n")}
-
-Funding Options:
-${fundingOptionsList.join("\n")}
-
-C assumptions:
-${fundingList.join("\n")}`;
-      }
-
-      function getFundingOptionsString() {
-        let fundingOptionsList = fundingOptionsFields.map(
-          (field) => `${field.label}: ${values[field.name] || ""}`,
-        );
-        return `These are the Funding Options:\n${fundingOptionsList.join("\n")}`;
-      }
-
-      function getCAssumptionsString() {
-        let fundingList = fundingSituationFields.map(
-          (field) => `${field.label}: ${values[field.name] || ""}`,
-        );
-        return `These are the C info assumptions:\n${fundingList.join("\n")}`;
-      }
-
-      // Update all prompts with their respective content
-      function updatePrompts() {
-        updatePartA();
-        updatePartB();
-        updatePartC();
-      }
-
-      // Update Part A with current assumptions
-      function updatePartA() {
-        const partATextarea = document.getElementById("partA");
-        if (partATextarea) {
-          const assumptionsText = getAssumptionsString();
-          partATextarea.value = assumptionsText;
-          promptValues["partA"] = assumptionsText;
-        }
-      }
-
-      // Update Part B with funding options
-      function updatePartB() {
-        const partBTextarea = document.getElementById("partB");
-        if (partBTextarea) {
-          const fundingOptionsText = getFundingOptionsString();
-          partBTextarea.value = fundingOptionsText;
-          promptValues["partB"] = fundingOptionsText;
-        }
-      }
-
-      // Update Part C with C assumptions
-      function updatePartC() {
-        const partCTextarea = document.getElementById("partC");
-        if (partCTextarea) {
-          const cAssumptionsText = getCAssumptionsString();
-          partCTextarea.value = cAssumptionsText;
-          promptValues["partC"] = cAssumptionsText;
-        }
-      }
-
-      // Handle product change
-      function handleProductChange(newProduct) {
-        currentProduct = newProduct;
-        productInfoFields = fieldConfigs[currentProduct].productInfo;
-        fundingOptionsFields = fieldConfigs[currentProduct].fundingOptions;
-        fundingSituationFields = fieldConfigs[currentProduct].fundingSituation;
-
-        // Get all field names from new product config
-        const allNewFieldNames = [
-          ...productInfoFields.map((f) => f.name),
-          ...fundingOptionsFields.map((f) => f.name),
-          ...fundingSituationFields.map((f) => f.name),
-        ];
-
-        // Clear values that don't exist in new product
-        Object.keys(values).forEach((key) => {
-          if (!allNewFieldNames.includes(key)) {
-            delete values[key];
-          }
-        });
-
-        // Initialize new fields with default values
-        [
-          ...productInfoFields,
-          ...fundingOptionsFields,
-          ...fundingSituationFields,
-        ].forEach((f) => {
-          if (!(f.name in values)) {
-            values[f.name] = f.defaultValue || "";
-          }
-        });
-
-        renderInputFields();
-        updatePrompts();
-      }
-
-      // Copy to clipboard function for prompts
-      function copyPrompt(promptName) {
-        const textarea = document.getElementById(promptName);
-        textarea.select();
-        document.execCommand("copy");
-
-        // Visual feedback
-        const copyBtn = textarea.parentElement.querySelector(".copy-btn");
-        copyBtn.textContent = "Copied!";
-        setTimeout(() => (copyBtn.textContent = "Copy"), 1000);
-      }
-
-      // Make copyPrompt available globally for onclick handlers
-      window.copyPrompt = copyPrompt;
-
-      // Initialization
-      function init() {
-        // Initialize values for current product with defaults
-        [
-          ...productInfoFields,
-          ...fundingOptionsFields,
-          ...fundingSituationFields,
-        ].forEach((f) => {
-          if (!(f.name in values)) {
-            values[f.name] = f.defaultValue || "";
-          }
-        });
-
-        // Initialize prompt values with defaults
-        promptFields.forEach((f) => {
-          if (!(f.name in promptValues)) {
-            promptValues[f.name] = f.defaultValue || "";
-          }
-        });
-
-        renderInputFields();
-        renderPromptFields();
-        updatePrompts(); // This will populate Part A, B, and C
-
-        // Product dropdown listener
-        document.getElementById("product").addEventListener("change", (e) => {
-          handleProductChange(e.target.value);
-        });
-      }
-
-      init();
-
-      // To extend:
-      // 1. Add new products to fieldConfigs object with productInfo, fundingOptions, and fundingSituation arrays
-      // 2. Add new options to the product dropdown in HTML
-      // 3. Add new prompt fields to promptFields array with optional defaultValue
-      // 4. System adapts automatically
     </script>
+  </head>
+  <body class="bg-surface min-h-screen font-sans">
+    <!-- Product Selection Section -->
+    <div class="max-w-3xl mx-auto mt-10">
+      <div
+        class="rounded-2xl shadow-2xl bg-card border border-primary p-8 mb-8"
+      >
+        <h2
+          class="text-3xl font-extrabold text-primary mb-6 tracking-tight flex items-center gap-2"
+        >
+          <svg
+            class="w-7 h-7 text-primary"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 4v16m8-8H4"></path>
+          </svg>
+          Choose a product
+        </h2>
+        <div class="flex flex-col gap-4">
+          <label class="text-lg font-medium text-primary" for="product"
+            >Product</label
+          >
+          <select
+            id="product"
+            class="rounded-lg border border-primary bg-card text-primary px-4 py-3 focus:ring-2 focus:ring-focus focus:border-focus transition-all duration-200 shadow-md w-60"
+          >
+            <option value="RCN">RCN</option>
+            <option value="Bond">Bond</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Assumptions Section -->
+      <div
+        class="rounded-2xl shadow-2xl bg-card border border-primary p-8 mb-8"
+      >
+        <h2
+          class="text-3xl font-extrabold text-primary mb-6 tracking-tight flex items-center gap-2"
+        >
+          <svg
+            class="w-7 h-7 text-accent"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 4v16m8-8H4"></path>
+          </svg>
+          Product and client assumptions
+        </h2>
+        <p>
+          Fill out each field to provide custom information on your specific
+          case. The values will be populated in the prompts below.
+        </p>
+        <br />
+        <!-- Product Information Subsection -->
+        <div class="mb-8">
+          <h3 class="text-xl font-semibold text-primary mb-3">
+            Product Information
+          </h3>
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 gap-6"
+            id="product-info-grid"
+          >
+            <!-- Populated by JS -->
+          </div>
+        </div>
+        <!-- Funding Options Subsection -->
+        <div class="mb-8">
+          <h3 class="text-xl font-semibold text-accent mb-3">
+            Funding Options
+          </h3>
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 gap-6"
+            id="funding-options-grid"
+          >
+            <!-- Populated by JS -->
+          </div>
+        </div>
+        <!-- C assumptions Subsection -->
+        <div>
+          <h3 class="text-xl font-semibold text-gold mb-3">C assumptions</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="funding-grid">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Prompts Section -->
+      <div
+        class="rounded-2xl shadow-2xl bg-card border border-primary p-8 mb-8"
+      >
+        <h2
+          class="text-3xl font-extrabold text-primary mb-6 tracking-tight flex items-center gap-2"
+        >
+          <svg
+            class="w-7 h-7 text-gold"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 4v16m8-8H4"></path>
+          </svg>
+          Generated Prompts
+        </h2>
+        <p>Copy each prompt one by one and insert into Copilot.</p>
+        <br />
+        <div class="grid gap-6" id="prompts-grid"><!-- Populated by JS --></div>
+      </div>
+
+      <!-- Save Section -->
+      <div class="flex justify-center mb-10" id="save-section">
+        <button
+          id="save-btn"
+          class="bg-gold text-primary font-bold py-4 px-10 rounded-xl shadow-xl hover:scale-105 hover:bg-accent hover:text-white transition-all duration-200 text-lg tracking-wide border-2 border-gold focus:outline-none focus:ring-4 focus:ring-gold/50"
+        >
+          <span class="flex items-center gap-2">
+            <svg
+              class="w-6 h-6 text-primary"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M17 16v2a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-2m5-4V4m0 0L7 8m5-4 4 4"
+              ></path>
+            </svg>
+            Save Current State to Disk
+          </span>
+        </button>
+      </div>
+    </div>
+    <script src="script.js"></script>
   </body>
 </html>
